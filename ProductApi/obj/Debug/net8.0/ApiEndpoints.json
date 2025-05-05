@@ -2,24 +2,40 @@
   {
     "ContainingType": "ProductApi.Controllers.ProductController",
     "Method": "AllProducts",
-    "RelativePath": "api/Product/ProductDetails",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ProductApi.Controllers.ProductController",
-    "Method": "SearchProduct",
-    "RelativePath": "api/Product/SearchProduct/{search}",
+    "RelativePath": "api/Product/AllProducts",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
+        "Name": "pageNumber",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pageSize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
         "Name": "search",
         "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProductApi.Controllers.ProductController",
+    "Method": "SearchProductById",
+    "RelativePath": "api/Product/SearchProductById/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],

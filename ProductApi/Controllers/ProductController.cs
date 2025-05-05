@@ -16,23 +16,25 @@ namespace ProductApi.Controllers
             _service = service;
         }
 
-        [HttpGet("ProductDetails")]
-        public async Task<IActionResult> AllProducts()
+        [HttpGet("AllProducts")]
+        public async Task<IActionResult> AllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string search = "")
         {
-            var products = await _service.AllProducts();
-            return Ok(products);
-        }
-        [HttpGet("SearchProduct/{search}")]
-        public async Task<IActionResult> SearchProduct(string search)
-        {
-            if (!string.IsNullOrEmpty(search))
-            {
-                var products = await _service.SearchAllProducts(search);
+            
+                var products = await _service.AllProducts(pageNumber, pageSize, search);
                 return Ok(products);
+
+        }
+        [HttpGet("SearchProductById/{id}")]
+        public async Task<IActionResult> SearchProductById(int id)
+        {
+            if (id > 0)
+            {
+                var product = await _service.SearchProductById(id);
+                return Ok(product); 
             }
 
-            return BadRequest("Search field is empty");
-
+            return BadRequest("Invalid product ID.");
         }
+
     }
 }
