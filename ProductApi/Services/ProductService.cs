@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ProductApi.Data;
 using ProductApi.DTOs;
 using ProductApi.Models;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -115,6 +116,37 @@ namespace ProductApi.Services
                     Id = product.Id,
                     ProductData = product.ProductData
                 };
+                return productDto;
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        public async Task<List<ProductDto>> GetProductsByBrand(int brand_id)
+        {
+            try
+            {
+                var domain = await _context.merchants
+                    .Where(m => m.id == brand_id)
+                    .Select(s => s.domain)
+                    .FirstOrDefaultAsync();
+
+                var product = await _context.product
+                    .Where(p => p.MerchantDomain == domain)
+                    .ToListAsync();
+
+                if (product == null)
+                    return null;
+
+                var productDto =  product.Select(p => new ProductDto()
+                {
+                    Id = p.Id,
+                    ProductLiveLink = "",
+                    ProductData = p.ProductData
+                }).ToList();
                 return productDto;
 
             }
