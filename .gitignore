@@ -1,3 +1,29 @@
-.vs
-bin
-obj
+# Visual Studio files
+.vs/
+*.user
+*.suo
+
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+TestResults/
+*.log
+
+# NuGet
+*.nupkg
+packages/
+*.snupkg
+
+# Rider / JetBrains
+.idea/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Others
+*.cache
+*.db
+*.bak
