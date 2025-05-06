@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProductApi.Services;
 
 namespace ProductApi.Controllers
 {
@@ -7,5 +8,11 @@ namespace ProductApi.Controllers
     [ApiController]
     public class BrandController : ControllerBase
     {
+        private readonly IProductService _service;
+        public BrandController(IProductService service)
+        {
+            _service = service;
+        }
+
     }
 }

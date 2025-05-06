@@ -17,10 +17,10 @@ namespace ProductApi.Controllers
         }
 
         [HttpGet("AllProducts")]
-        public async Task<IActionResult> AllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string search = "")
+        public async Task<IActionResult> AllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string search = "", [FromQuery] string sortByPriceDirection = "")
         {
             
-                var products = await _service.AllProducts(pageNumber, pageSize, search);
+                var products = await _service.AllProducts(pageNumber, pageSize, search, sortByPriceDirection);
                 return Ok(products);
 
         }
@@ -36,5 +36,13 @@ namespace ProductApi.Controllers
             return BadRequest("Invalid product ID.");
         }
 
+        [HttpGet("{brand_id}")]
+        public async Task<IActionResult> GetProductsByBrand(int brand_id)
+        {
+
+            var products = await _service.GetProductsByBrand(brand_id);
+            return Ok(products);
+
+        }
     }
 }
