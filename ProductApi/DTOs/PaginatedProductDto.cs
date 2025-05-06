@@ -1,4 +1,6 @@
-﻿namespace ProductApi.DTOs
+﻿using ProductApi.Models;
+
+namespace ProductApi.DTOs
 {
     public class PaginatedProductDto
     {
