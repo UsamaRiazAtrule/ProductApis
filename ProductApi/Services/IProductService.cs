@@ -6,7 +6,7 @@ namespace ProductApi.Services
 {
     public interface IProductService
     {
-        Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search);
+        Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search, string price);
         Task<ProductDto> SearchProductById(int id);
     }
 }
