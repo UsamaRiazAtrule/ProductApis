@@ -14,13 +14,5 @@ namespace ProductApi.Controllers
             _service = service;
         }
 
-        [HttpGet("{brand_id}")]
-        public async Task<IActionResult> GetProductsByBrand(int brand_id)
-        {
-
-            var products = await _service.GetProductsByBrand(brand_id);
-            return Ok(products);
-
-        }
     }
 }
