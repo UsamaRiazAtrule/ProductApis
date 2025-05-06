@@ -16,7 +16,7 @@ namespace ProductApi.Services
             _context = context;
         }
 
-        public async Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search, string price)
+        public async Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search, string sortByPriceDirection)
         {
             try
             {
@@ -49,11 +49,11 @@ namespace ProductApi.Services
                     @@ to_tsquery('english', {{0}})";
                     string orderClause = "";
 
-                    if (!string.IsNullOrEmpty(price))
+                    if (!string.IsNullOrEmpty(sortByPriceDirection))
                     {
-                        if (price.Equals("LTH", StringComparison.OrdinalIgnoreCase))
+                        if (sortByPriceDirection.Equals("LTH", StringComparison.OrdinalIgnoreCase))
                             orderClause = "ORDER BY (product_data->>'price')::numeric ASC ";
-                        else if (price.Equals("HTL", StringComparison.OrdinalIgnoreCase))
+                        else if (sortByPriceDirection.Equals("HTL", StringComparison.OrdinalIgnoreCase))
                             orderClause = "ORDER BY (product_data->>'price')::numeric DESC ";
                         else
                             orderClause = "ORDER BY id ";
@@ -75,11 +75,11 @@ namespace ProductApi.Services
                     string baseQuery = "SELECT * FROM product ";
                     string orderClause = "";
 
-                    if (!string.IsNullOrEmpty(price))
+                    if (!string.IsNullOrEmpty(sortByPriceDirection))
                     {
-                        if (price.Equals("LTH", StringComparison.OrdinalIgnoreCase))
+                        if (sortByPriceDirection.Equals("LTH", StringComparison.OrdinalIgnoreCase))
                             orderClause = "ORDER BY (product_data->>'price')::numeric ASC ";
-                        else if (price.Equals("HTL", StringComparison.OrdinalIgnoreCase))
+                        else if (sortByPriceDirection.Equals("HTL", StringComparison.OrdinalIgnoreCase))
                             orderClause = "ORDER BY (product_data->>'price')::numeric DESC ";
                         else
                             orderClause = "ORDER BY id ";
