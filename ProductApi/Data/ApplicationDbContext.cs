@@ -7,7 +7,7 @@ namespace ProductApi.Data
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
-        public DbSet<Product> product { get; set; }
+        public DbSet<Product> products { get; set; }
         public DbSet<ProductDetails> productDetails { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

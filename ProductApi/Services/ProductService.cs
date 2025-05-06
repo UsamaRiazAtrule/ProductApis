@@ -37,8 +37,9 @@ namespace ProductApi.Services
 
                     var tsQuery = string.Join(" & ", terms);
 
-                    var query = $@"
-                     SELECT * FROM product 
+
+                    var baseSearchQuery = $@"
+                     SELECT * FROM products
                      WHERE to_tsvector('english',
                        COALESCE(product_data->>'title', '') || ' ' ||
                        COALESCE(product_data->>'type', '') || ' ' ||
@@ -51,18 +52,38 @@ namespace ProductApi.Services
                     var countResult = await _context.product.FromSqlRaw(query, tsQuery).ToListAsync();
                     totalCount = countResult.Count() > 0 ? countResult.Count() : 0;
 
-                    var products = await _context.product.FromSqlRaw(query + "LIMIT {1} OFFSET {2}", tsQuery, pageSize, skip).ToListAsync();
+                    var fullSearchQuery = baseSearchQuery + orderClause;
+                    var countResult = await _context.products.FromSqlRaw(baseSearchQuery, tsQuery).ToListAsync();
+                    totalCount = countResult.Count();
 
-                    return ReturnToPaginatedProductDTO(totalCount, products, pageSize, totalCount);
+                    products = await _context.products.FromSqlRaw(fullSearchQuery + "LIMIT {1} OFFSET {2}", tsQuery, pageSize, skip).ToListAsync();
+
 
                 }
                 else
                 {
 
-                    totalCount = await _context.product.CountAsync();
-                    var products = await _context.product.Skip(skip).Take(pageSize).ToListAsync();
+                    string baseQuery = "SELECT * FROM products ";
+                    string orderClause = "";
 
-                    return ReturnToPaginatedProductDTO(totalCount, products, pageSize, totalCount);
+                    if (!string.IsNullOrEmpty(sortByPriceDirection))
+                    {
+                        if (sortByPriceDirection.Equals("LTH", StringComparison.OrdinalIgnoreCase))
+                            orderClause = "ORDER BY (product_data->>'price')::numeric ASC ";
+                        else if (sortByPriceDirection.Equals("HTL", StringComparison.OrdinalIgnoreCase))
+                            orderClause = "ORDER BY (product_data->>'price')::numeric DESC ";
+                        else
+                            orderClause = "ORDER BY id ";
+                    }
+                    else
+                    {
+                        orderClause = "ORDER BY id ";
+                    }
+
+                    var fullQuery = baseQuery + orderClause + "LIMIT {0} OFFSET {1}";
+                    totalCount = await _context.products.CountAsync();
+                    products = await _context.products.FromSqlRaw(fullQuery, pageSize, skip).ToListAsync();
+
                 }
             }
             catch (Exception ex)
@@ -74,7 +95,7 @@ namespace ProductApi.Services
         {
             try
             {
-                var product = await _context.product.Where(p => p.Id == id).FirstOrDefaultAsync();
+                var product = await _context.products.Where(p => p.Id == id).FirstOrDefaultAsync();
 
                 if (product == null)
                     return null;
