@@ -13,6 +13,8 @@ namespace ProductApi.Models
 
         [Column("product_id")]
         public long? ProductId { get; set; } // Nullable because in SQL it's not marked as NOT NULL
+        [Column("product_url")]
+        public string ProductUrl { get; set; } 
 
         [Required]
         [MaxLength(255)]

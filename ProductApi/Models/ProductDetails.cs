@@ -24,9 +24,5 @@ namespace ProductApi.Models
         public DateTimeOffset PublishedAt { get; set; }
         public int DomainId { get; set; }
         public int ProductId { get; set; }
-
-        // Optional: Navigation properties if using Entity Framework
-        // public Merchant Domain { get; set; }
-        // public Product Product { get; set; }
     }
 }

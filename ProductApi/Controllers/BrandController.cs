@@ -17,7 +17,7 @@ namespace ProductApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Brands()
         {
-            var brands = _service.Brands();
+            var brands = await _service.Brands();
             return Ok(brands);
         }
     }

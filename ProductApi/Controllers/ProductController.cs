@@ -36,11 +36,11 @@ namespace ProductApi.Controllers
             return BadRequest("Invalid product ID.");
         }
 
-        [HttpGet("{brand_id}")]
-        public async Task<IActionResult> GetProductsByBrand(int brand_id)
+        [HttpGet("brand/{id}")]
+        public async Task<IActionResult> GetProductsByBrand(int id)
         {
 
-            var products = await _service.GetProductsByBrand(brand_id);
+            var products = await _service.GetProductsByBrand(id);
             return Ok(products);
 
         }

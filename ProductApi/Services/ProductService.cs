@@ -150,7 +150,7 @@ namespace ProductApi.Services
                 var productDto =  product.Select(p => new ProductDto()
                 {
                     Id = p.Id,
-                    ProductLiveLink = "",
+                    ProductUrl = $"{p.MerchantDomain}{p.ProductUrl}",
                     ProductData = p.ProductData
                 }).ToList();
                 return productDto;
@@ -195,8 +195,24 @@ namespace ProductApi.Services
             try
             {
                 var brands = await _context.merchants.ToListAsync();
-                if (brands != null)
-                    return brands;
+                var sortedBrands = brands
+                    .OrderByDescending(b =>
+                    {
+                        if (decimal.TryParse(
+                                b.EstimatedYearlySales?
+                                    .Replace("USD", "", StringComparison.OrdinalIgnoreCase)
+                                    .Replace("$", "")
+                                    .Replace(",", "")
+                                    .Trim(),
+                                out var sales))
+                        {
+                            return sales;
+                        }
+                        return 0;
+                    })
+                    .ToList();
+                if (sortedBrands != null)
+                    return sortedBrands;
                 return  new List<Brand>();
             }
             catch (Exception ex)
