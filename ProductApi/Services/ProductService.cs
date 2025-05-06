@@ -41,7 +41,7 @@ namespace ProductApi.Services
 
 
                     var baseSearchQuery = $@"
-                     SELECT * FROM product 
+                     SELECT * FROM products 
 
                      WHERE to_tsvector('english',
                        COALESCE(product_data->>'title', '') || ' ' ||
@@ -68,16 +68,16 @@ namespace ProductApi.Services
 
                     var fullSearchQuery = baseSearchQuery + orderClause;
 
-                    var countResult = await _context.product.FromSqlRaw(baseSearchQuery, tsQuery).ToListAsync();
+                    var countResult = await _context.products.FromSqlRaw(baseSearchQuery, tsQuery).ToListAsync();
                     totalCount = countResult.Count();
 
-                    products = await _context.product.FromSqlRaw(fullSearchQuery + "LIMIT {1} OFFSET {2}", tsQuery, pageSize, skip).ToListAsync();
+                    products = await _context.products.FromSqlRaw(fullSearchQuery + "LIMIT {1} OFFSET {2}", tsQuery, pageSize, skip).ToListAsync();
 
 
                 }
                 else
                 {
-                    string baseQuery = "SELECT * FROM product ";
+                    string baseQuery = "SELECT * FROM products ";
                     string orderClause = "";
 
                     if (!string.IsNullOrEmpty(sortByPriceDirection))
@@ -140,7 +140,7 @@ namespace ProductApi.Services
                     .Select(s => s.domain)
                     .FirstOrDefaultAsync();
 
-                var product = await _context.product
+                var product = await _context.products
                     .Where(p => p.MerchantDomain == domain)
                     .ToListAsync();
 
@@ -187,6 +187,21 @@ namespace ProductApi.Services
             {
 
                 throw;
+            }
+        }
+
+        public async Task<List<Brand>> Brands()
+        {
+            try
+            {
+                var brands = await _context.merchants.ToListAsync();
+                if (brands != null)
+                    return brands;
+                return  new List<Brand>();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred while fetching brands.", ex);
             }
         }
     }

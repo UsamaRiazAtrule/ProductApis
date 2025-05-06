@@ -14,5 +14,11 @@ namespace ProductApi.Controllers
             _service = service;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Brands()
+        {
+            var brands = _service.Brands();
+            return Ok(brands);
+        }
     }
 }
