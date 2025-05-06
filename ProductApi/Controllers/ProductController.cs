@@ -24,8 +24,8 @@ namespace ProductApi.Controllers
                 return Ok(products);
 
         }
-        [HttpGet("SearchProductById/{id}")]
-        public async Task<IActionResult> SearchProductById(int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(int id)
         {
             if (id > 0)
             {
