@@ -7,7 +7,7 @@ namespace ProductApi.DTOs
     public class ProductDto
     {
         public int Id { get; set; }
-        public string? ProductUrl { get; set; }
+        public string ProductUrl { get; set; }
         public JsonDocument ProductData { get; set; }
     }
 }

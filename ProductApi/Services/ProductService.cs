@@ -170,6 +170,7 @@ namespace ProductApi.Services
                 var productDtos = products.Select(p => new ProductDto
                 {
                     Id = p.Id,
+                    ProductUrl = $"{p.MerchantDomain}{p.ProductUrl}",
                     ProductData = p.ProductData
                 }).ToList();
 
