@@ -17,7 +17,7 @@ namespace ProductApi.Services
             _context = context;
         }
 
-        public async Task<PaginatedDto> AllProducts(int pageNumber, int pageSize, string search, string sortByPriceDirection)
+        public async Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search, string sortByPriceDirection)
         {
             try
             {
@@ -35,7 +35,7 @@ namespace ProductApi.Services
                                              .ToList();
 
                     if (!terms.Any())
-                        return new PaginatedDto();
+                        return new PaginatedProductDto();
 
                     var tsQuery = string.Join(" & ", terms);
 
@@ -101,7 +101,7 @@ namespace ProductApi.Services
                     products = await _context.products.FromSqlRaw(fullQuery, pageSize, skip).ToListAsync();
 
                 }
-                return ReturnToPaginatedDto(products, pageSize, totalCount);
+                return ReturnToPaginatedProductDto(products, pageSize, totalCount);
             }
             catch (Exception ex)
             {
@@ -132,14 +132,14 @@ namespace ProductApi.Services
                 throw;
             }
         }
-        public async Task<PaginatedDto> GetProductsByBrand(int brand_id, int pageNumber, int pageSize)
+        public async Task<PaginatedProductDto> GetProductsByBrand(int brand_id, int pageNumber, int pageSize)
         {
             try
             {
                 var domain = await _context.merchants.Where(m => m.id == brand_id).Select(s => s.domain).FirstOrDefaultAsync();
 
                 if (string.IsNullOrEmpty(domain))
-                    return new PaginatedDto();
+                    return new PaginatedProductDto();
 
                 var allProducts = _context.products.Where(p => p.MerchantDomain == domain);
                 var products = allProducts.OrderBy(p => p.Id).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
@@ -155,7 +155,7 @@ namespace ProductApi.Services
                 // Calculate total pages
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-                return new PaginatedDto
+                return new PaginatedProductDto
                 {
                     TotalCount = totalCount,
                     TotalPages = totalPages,
@@ -170,7 +170,7 @@ namespace ProductApi.Services
             }
         }
 
-        private PaginatedDto ReturnToPaginatedDto(List<Product> products, int pageSize, int totalCount)
+        private PaginatedProductDto ReturnToPaginatedProductDto(List<Product> products, int pageSize, int totalCount)
         {
             try
             {
@@ -184,7 +184,7 @@ namespace ProductApi.Services
                 // Calculate total pages
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-                return new PaginatedDto
+                return new PaginatedProductDto
                 {
                     TotalCount = totalCount,
                     TotalPages = totalPages,
