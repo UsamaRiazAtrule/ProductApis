@@ -4,7 +4,7 @@ using ProductApi.Services;
 
 namespace ProductApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/brand")]
     [ApiController]
     public class BrandController : ControllerBase
     {

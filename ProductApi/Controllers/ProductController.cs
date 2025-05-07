@@ -6,7 +6,7 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace ProductApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/product")]
     [ApiController]
     public class ProductController : ControllerBase
     {
@@ -16,8 +16,8 @@ namespace ProductApi.Controllers
             _service = service;
         }
 
-        [HttpGet("AllProducts")]
-        public async Task<IActionResult> AllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string search = "", [FromQuery] string sortByPriceDirection = "")
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllProducts([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string search = "", [FromQuery] string sortByPriceDirection = "")
         {
             
                 var products = await _service.AllProducts(pageNumber, pageSize, search, sortByPriceDirection);
