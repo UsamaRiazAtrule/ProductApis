@@ -2,7 +2,7 @@
 
 namespace ProductApi.DTOs
 {
-    public class PaginatedProductDto
+    public class PaginatedDto
     {
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }

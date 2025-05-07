@@ -17,7 +17,7 @@ namespace ProductApi.Services
             _context = context;
         }
 
-        public async Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search, string sortByPriceDirection)
+        public async Task<PaginatedDto> AllProducts(int pageNumber, int pageSize, string search, string sortByPriceDirection)
         {
             try
             {
@@ -35,21 +35,22 @@ namespace ProductApi.Services
                                              .ToList();
 
                     if (!terms.Any())
-                        return new PaginatedProductDto();
+                        return new PaginatedDto();
 
                     var tsQuery = string.Join(" & ", terms);
 
 
-                    var baseSearchQuery = $@"
-                     SELECT * FROM products 
+                    var baseSearchQuery = @"SELECT * FROM products WHERE search_vector @@ to_tsquery('english', {0})";
+                    //var baseSearchQuery = $@"
+                    // SELECT * FROM products 
 
-                     WHERE to_tsvector('english',
-                       COALESCE(product_data->>'title', '') || ' ' ||
-                       COALESCE(product_data->>'type', '') || ' ' ||
-                       COALESCE(product_data->>'description', '') || ' ' ||
-                       COALESCE(product_data->>'handle', '') || ' ' ||
-                       COALESCE((SELECT string_agg(elem, ' ') FROM jsonb_array_elements_text(product_data->'tags') AS elem), '')) 
-                    @@ to_tsquery('english', {{0}})";
+                    // WHERE to_tsvector('english',
+                    //   COALESCE(product_data->>'title', '') || ' ' ||
+                    //   COALESCE(product_data->>'type', '') || ' ' ||
+                    //   COALESCE(product_data->>'description', '') || ' ' ||
+                    //   COALESCE(product_data->>'handle', '') || ' ' ||
+                    //   COALESCE((SELECT string_agg(elem, ' ') FROM jsonb_array_elements_text(product_data->'tags') AS elem), '')) 
+                    //@@ to_tsquery('english', {{0}})";
                     string orderClause = "";
 
                     if (!string.IsNullOrEmpty(sortByPriceDirection))
@@ -100,7 +101,7 @@ namespace ProductApi.Services
                     products = await _context.products.FromSqlRaw(fullQuery, pageSize, skip).ToListAsync();
 
                 }
-                return ReturnToPaginatedProductDTO(products, pageSize, totalCount);
+                return ReturnToPaginatedDto(products, pageSize, totalCount);
             }
             catch (Exception ex)
             {
@@ -131,29 +132,35 @@ namespace ProductApi.Services
                 throw;
             }
         }
-        public async Task<List<ProductDto>> GetProductsByBrand(int brand_id)
+        public async Task<PaginatedDto> GetProductsByBrand(int brand_id, int pageNumber, int pageSize)
         {
             try
             {
-                var domain = await _context.merchants
-                    .Where(m => m.id == brand_id)
-                    .Select(s => s.domain)
-                    .FirstOrDefaultAsync();
+                var domain = await _context.merchants.Where(m => m.id == brand_id).Select(s => s.domain).FirstOrDefaultAsync();
 
-                var product = await _context.products
-                    .Where(p => p.MerchantDomain == domain)
-                    .ToListAsync();
+                if (string.IsNullOrEmpty(domain))
+                    return new PaginatedDto();
 
-                if (product == null)
-                    return null;
+                var allProducts = _context.products.Where(p => p.MerchantDomain == domain);
+                var products = allProducts.OrderBy(p => p.Id).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                var totalCount = allProducts.Count();
 
-                var productDto =  product.Select(p => new ProductDto()
+                var productDto = products.Select(p => new ProductDto()
                 {
                     Id = p.Id,
                     ProductUrl = $"{p.MerchantDomain}{p.ProductUrl}",
                     ProductData = p.ProductData
                 }).ToList();
-                return productDto;
+
+                // Calculate total pages
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                return new PaginatedDto
+                {
+                    TotalCount = totalCount,
+                    TotalPages = totalPages,
+                    Products = productDto
+                };
 
             }
             catch (Exception)
@@ -163,7 +170,7 @@ namespace ProductApi.Services
             }
         }
 
-        private PaginatedProductDto ReturnToPaginatedProductDTO(List<Product> products, int pageSize, int totalCount)
+        private PaginatedDto ReturnToPaginatedDto(List<Product> products, int pageSize, int totalCount)
         {
             try
             {
@@ -177,7 +184,7 @@ namespace ProductApi.Services
                 // Calculate total pages
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
-                return new PaginatedProductDto
+                return new PaginatedDto
                 {
                     TotalCount = totalCount,
                     TotalPages = totalPages,
