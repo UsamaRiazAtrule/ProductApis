@@ -12,7 +12,8 @@ namespace ProductApi.Models
         public int Id { get; set; }
 
         [Column("product_id")]
-        public long? ProductId { get; set; } // Nullable because in SQL it's not marked as NOT NULL
+        public long? ProductId { get; set; }  
+
         [Column("product_url")]
         public string ProductUrl { get; set; } 
 
@@ -23,6 +24,6 @@ namespace ProductApi.Models
 
         [Required]
         [Column("product_data", TypeName = "json")]
-        public JsonDocument ProductData { get; set; }// Using System.Text.Json.Nodes
+        public JsonDocument ProductData { get; set; }
     }
 }
