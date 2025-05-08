@@ -37,10 +37,10 @@ namespace ProductApi.Controllers
         }
 
         [HttpGet("brand/{id}")]
-        public async Task<IActionResult> GetProductsByBrand(int id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string sortByPrice = "")
+        public async Task<IActionResult> GetProductsByBrand(int id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string sortByPriceDirection = "")
         {
 
-            var products = await _service.GetProductsByBrand(id, pageNumber, pageSize, sortByPrice);
+            var products = await _service.GetProductsByBrand(id, pageNumber, pageSize, sortByPriceDirection);
             return Ok(products);
 
         }
