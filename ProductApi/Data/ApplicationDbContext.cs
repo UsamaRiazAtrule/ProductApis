@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProductApi.DTOs;
 using ProductApi.Models;
 using System;
 
