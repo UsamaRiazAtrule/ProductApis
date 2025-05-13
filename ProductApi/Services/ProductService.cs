@@ -49,7 +49,8 @@ namespace ProductApi.Services
                     totalCount = result.FirstOrDefault();
 
 
-                    var baseSearchQuery = @"SELECT * FROM products WHERE search_vector @@ to_tsquery('english', {0})";
+                    var baseSearchQuery = @"SELECT * FROM products WHERE search_vector @@ to_tsquery('english', {0})
+                       AND (product_data->>'price')::numeric > 0 ";
                     string orderClause = "";
 
                     if (!string.IsNullOrEmpty(sortByPriceDirection))
@@ -71,7 +72,8 @@ namespace ProductApi.Services
                 }
                 else
                 {
-                    string baseQuery = "SELECT * FROM products ";
+                    string baseQuery = @"SELECT * FROM products 
+                        WHERE (product_data->>'price')::numeric > 0 ";
                     string orderClause = "";
 
                     if (!string.IsNullOrEmpty(sortByPriceDirection))
@@ -114,6 +116,7 @@ namespace ProductApi.Services
                 var productDto = new ProductDto()
                 {
                     Id = product.Id,
+                    ProductUrl = $"{product.MerchantDomain}{product.ProductUrl}",
                     ProductData = product.ProductData
                 };
                 return productDto;
@@ -127,40 +130,62 @@ namespace ProductApi.Services
         }
         public async Task<PaginatedProductDto> GetProductsByBrand(int brand_id, int pageNumber, int pageSize, string sortByPrice)
         {
-
-
             try
             {
-                var domain = await _context.merchants.Where(m => m.id == brand_id).Select(s => s.domain).FirstOrDefaultAsync();
+                var merchant = await _context.merchants
+                    .Where(m => m.id == brand_id)
+                    .Select(m => new { m.domain, m.BrandName })
+                    .FirstOrDefaultAsync();
 
-                if (string.IsNullOrEmpty(domain))
+                if (string.IsNullOrEmpty(merchant?.domain))
                     return new PaginatedProductDto();
 
-                List<Product> products;
-                int totalCount;
-
-                if (!string.IsNullOrEmpty(sortByPrice) && (sortByPrice.Equals("LTH", StringComparison.OrdinalIgnoreCase) || sortByPrice.Equals("HTL", StringComparison.OrdinalIgnoreCase)))
+                // Build ORDER BY clause
+                string orderBy;
+                if (!string.IsNullOrWhiteSpace(sortByPrice) &&
+                    (sortByPrice.Equals("LTH", StringComparison.OrdinalIgnoreCase) ||
+                     sortByPrice.Equals("HTL", StringComparison.OrdinalIgnoreCase)))
                 {
-                    var sortDirection = sortByPrice.Equals("LTH", StringComparison.OrdinalIgnoreCase) ? "ASC" : "DESC";
-
-                    var rawSql = _context.products
-                        .FromSqlRaw(@"
-                                     SELECT * FROM products
-                                     WHERE ""merchant_domain"" = {0}
-                                     ORDER BY (""product_data""->>'price')::numeric " + sortDirection + @"
-                                     OFFSET {1}
-                                     LIMIT {2}", domain, (pageNumber - 1) * pageSize, pageSize);
-
-                    products = await rawSql.ToListAsync();
-
-                    totalCount = await _context.products.Where(p => p.MerchantDomain == domain).CountAsync();
+                    var dir = sortByPrice.Equals("LTH", StringComparison.OrdinalIgnoreCase) ? "ASC" : "DESC";
+                    orderBy = @$"(product_data->>'price')::numeric {dir}";
                 }
                 else
                 {
-                    var allProducts = _context.products.Where(p => p.MerchantDomain == domain).OrderBy(p => p.Id);
-                    totalCount = await allProducts.CountAsync();
-                    products = await allProducts.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+                    // fallback ordering (by Id here; change as needed)
+                    orderBy = "id ASC";
                 }
+
+                // Compute offset
+                var offset = (pageNumber - 1) * pageSize;
+
+                // Fetch paged products via a single RAW SQL query
+                var sql = $@"
+                            SELECT *
+                            FROM products
+                            WHERE merchant_domain = {{0}}
+                              AND (product_data->>'price')::numeric > 0
+                            ORDER BY {orderBy}
+                            OFFSET {{1}}
+                            LIMIT {{2}}";
+
+                var products = await _context.products
+                    .FromSqlRaw(sql, merchant?.domain, offset, pageSize)
+                    .ToListAsync();
+
+                //var totalCount = await _context.Database
+                //                        .SqlQuery<int>(@$"SELECT COUNT(*) FROM products
+                //                         WHERE  merchant_domain = {domain} AND
+                //                        (product_data->>'price')::numeric > 0")
+                //                        .SingleAsync();
+
+                var countQuery = _context.products
+                .FromSqlRaw(@"
+                    SELECT id
+                    FROM products
+                    WHERE merchant_domain = {0}
+                      AND (product_data->>'price')::numeric > 0", merchant?.domain);
+
+                var totalCount = await countQuery.CountAsync();
 
                 var productDto = products.Select(p => new ProductDto()
                 {
@@ -175,7 +200,8 @@ namespace ProductApi.Services
                 {
                     TotalCount = totalCount,
                     TotalPages = totalPages,
-                    Products = productDto
+                    Products = productDto,
+                    BrandName = merchant?.BrandName
                 };
             }
             catch (Exception)
