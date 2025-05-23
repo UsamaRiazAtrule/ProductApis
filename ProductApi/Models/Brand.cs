@@ -10,6 +10,10 @@ namespace ProductApi.Models
         public string? EstimatedYearlySales { get; set; }
         [Column("brand_name")]
         public string? BrandName { get; set; }
+        [Column("brand_url")]
+        public string? BrandUrl{ get; set; } // the actual domain from master data
+        [Column("has_shipping")]
+        public bool? HasShipping { get; set; } 
         public string? image { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using ProductApi.Models;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ProductApi.Services
 {
@@ -45,12 +46,18 @@ namespace ProductApi.Services
                                              SELECT COUNT(id)
                                              FROM products 
                                              WHERE search_vector @@ to_tsquery('english', {tsQuery})
+                                             AND  (product_data->>'price')::numeric > 0 
+                                             AND (product_data->>'available')::boolean = true
+                                             AND is_food_or_drink = true
                                              ").ToListAsync();
                     totalCount = result.FirstOrDefault();
 
 
                     var baseSearchQuery = @"SELECT * FROM products WHERE search_vector @@ to_tsquery('english', {0})
-                       AND (product_data->>'price')::numeric > 0 ";
+                       AND (product_data->>'price')::numeric > 0 
+                       AND (product_data->>'available')::boolean = true
+                          AND is_food_or_drink = true   
+                       ";
                     string orderClause = "";
 
                     if (!string.IsNullOrEmpty(sortByPriceDirection))
@@ -73,7 +80,9 @@ namespace ProductApi.Services
                 else
                 {
                     string baseQuery = @"SELECT * FROM products 
-                        WHERE (product_data->>'price')::numeric > 0 ";
+                        WHERE (product_data->>'price')::numeric > 0 
+                        AND (product_data->>'available')::boolean = true 
+                        AND is_food_or_drink = true ";
                     string orderClause = "";
 
                     if (!string.IsNullOrEmpty(sortByPriceDirection))
@@ -87,12 +96,21 @@ namespace ProductApi.Services
                     }
                     else
                     {
-                        orderClause = "ORDER BY id ";
+                        orderClause = " ORDER BY id ";
                     }
 
                     var fullQuery = baseQuery + orderClause + "LIMIT {0} OFFSET {1}";
 
-                    totalCount = await _context.products.CountAsync();
+
+                    var countResult = await _context.Database.SqlQuery<int>($@"
+                                             SELECT COUNT(id)
+                                             FROM products 
+                                             WHERE (product_data->>'price')::numeric > 0 
+                                             AND (product_data->>'available')::boolean = true
+                                             AND is_food_or_drink = true 
+                                             ").ToListAsync();
+                    totalCount = countResult.FirstOrDefault();
+
                     products = await _context.products.FromSqlRaw(fullQuery, pageSize, skip).ToListAsync();
 
                 }
@@ -134,9 +152,20 @@ namespace ProductApi.Services
             {
                 var merchant = await _context.merchants
                     .Where(m => m.id == brand_id)
-                    .Select(m => new { m.domain, m.BrandName })
+                    .Select(m => new { m.domain, m.BrandName, m.BrandUrl, m.image })
                     .FirstOrDefaultAsync();
 
+                var brandDescription = string.Empty;
+                if (!string.IsNullOrWhiteSpace(merchant?.BrandUrl))
+                {
+
+                    var brandDescriptionResult = await _context.Database
+                        .SqlQueryRaw<string>(@"SELECT COALESCE(meta_description, aboutus_text) AS description
+                            FROM public.meta_og_scraped_content
+                            WHERE domainname =  {0}", merchant.BrandUrl).ToListAsync();
+
+                    brandDescription = brandDescriptionResult.FirstOrDefault();
+                }
                 if (string.IsNullOrEmpty(merchant?.domain))
                     return new PaginatedProductDto();
 
@@ -164,6 +193,8 @@ namespace ProductApi.Services
                             FROM products
                             WHERE merchant_domain = {{0}}
                               AND (product_data->>'price')::numeric > 0
+                              AND (product_data->>'available')::boolean = true
+                               AND is_food_or_drink = true
                             ORDER BY {orderBy}
                             OFFSET {{1}}
                             LIMIT {{2}}";
@@ -178,14 +209,25 @@ namespace ProductApi.Services
                 //                        (product_data->>'price')::numeric > 0")
                 //                        .SingleAsync();
 
-                var countQuery = _context.products
-                .FromSqlRaw(@"
-                    SELECT id
-                    FROM products
-                    WHERE merchant_domain = {0}
-                      AND (product_data->>'price')::numeric > 0", merchant?.domain);
+                //var countQuery = _context.products
+                //.FromSqlRaw(@"
+                //    SELECT id
+                //    FROM products
+                //    WHERE merchant_domain = {0}
+                //      AND (product_data->>'price')::numeric > 0
+                //      AND (product_data->>'available')::boolean = true", merchant?.domain);
 
-                var totalCount = await countQuery.CountAsync();
+                //var totalCount = await countQuery.CountAsync();
+
+                var countResult = await _context.Database.SqlQueryRaw<int>($@"
+                                             SELECT count(id)
+                                                FROM products
+                                                WHERE merchant_domain = {{0}}
+                                                  AND (product_data->>'price')::numeric > 0
+                                                  AND (product_data->>'available')::boolean = true
+                                                  AND is_food_or_drink = true
+                                             ", merchant?.domain).ToListAsync();
+                var totalCount = countResult.FirstOrDefault();
 
                 var productDto = products.Select(p => new ProductDto()
                 {
@@ -201,6 +243,8 @@ namespace ProductApi.Services
                     TotalCount = totalCount,
                     TotalPages = totalPages,
                     Products = productDto,
+                    BrandDescription = brandDescription,
+                    BrandImage = merchant?.image,
                     BrandName = merchant?.BrandName
                 };
             }
@@ -243,23 +287,52 @@ namespace ProductApi.Services
         {
             try
             {
-                var brands = await _context.merchants.ToListAsync();
-                var sortedBrands = brands
-                    .OrderByDescending(b =>
-                    {
-                        if (decimal.TryParse(
-                                b.EstimatedYearlySales?
-                                    .Replace("USD", "", StringComparison.OrdinalIgnoreCase)
-                                    .Replace("$", "")
-                                    .Replace(",", "")
-                                    .Trim(),
-                                out var sales))
-                        {
-                            return sales;
-                        }
-                        return 0;
-                    })
-                    .ToList();
+                //var brands = await _context.merchants
+                //    .Where(b=>b.HasShipping==true)
+                //    .ToListAsync();
+                //var sortedBrands = brands
+                //    .OrderByDescending(b =>
+                //    {
+                //        if (decimal.TryParse(
+                //                b.EstimatedYearlySales?
+                //                    .Replace("USD", "", StringComparison.OrdinalIgnoreCase)
+                //                    .Replace("$", "")
+                //                    .Replace(",", "")
+                //                    .Trim(),
+                //                out var sales))
+                //        {
+                //            return sales;
+                //        }
+                //        return 0;
+                //    })
+                //    .ToList();
+
+                //var sortedBrands = await _context.merchants
+                //    .FromSqlRaw(@"
+                //        SELECT * FROM merchants
+                //        WHERE has_shipping = true
+                //        ORDER BY 
+                //            COALESCE(
+                //                CAST(
+                //                    REPLACE(
+                //                        REPLACE(
+                //                            REPLACE(estimated_yearly_sales, 'USD', ''),
+                //                            '$', ''),
+                //                        ',', '') AS DECIMAL), 0) DESC
+                //    ")
+                //    .ToListAsync();
+
+                var sortedBrands = await _context.merchants
+                    .FromSqlRaw(@"
+                       select *
+                        from merchants 
+                        where has_shipping = true
+                        and has_products = true
+                        order by coalesce(estimated_sales_numeric, 0) desc
+                        ;
+                    ")
+                    .ToListAsync();
+
                 if (sortedBrands != null)
                     return sortedBrands;
                 return  new List<Brand>();
