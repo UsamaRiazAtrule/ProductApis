@@ -9,6 +9,6 @@ namespace ProductApi.Services
         Task<PaginatedProductDto> AllProducts(int pageNumber, int pageSize, string search, string sortByPriceDirection);
         Task<ProductDto> SearchProductById(int id);
         Task<PaginatedProductDto> GetProductsByBrand(int brand_id, int pageNumber, int pageSize, string sortByPrice);
-        Task<List<Brand>> Brands();
+        Task<List<BrandDto>> Brands(int page, int size);
     }
 }

@@ -152,7 +152,7 @@ namespace ProductApi.Services
             {
                 var merchant = await _context.merchants
                     .Where(m => m.id == brand_id)
-                    .Select(m => new { m.domain, m.BrandName, m.BrandUrl, m.image })
+                    .Select(m => new { m.domain, m.BrandName, m.BrandUrl, m.Image })
                     .FirstOrDefaultAsync();
 
                 var brandDescription = string.Empty;
@@ -244,7 +244,7 @@ namespace ProductApi.Services
                     TotalPages = totalPages,
                     Products = productDto,
                     BrandDescription = brandDescription,
-                    BrandImage = merchant?.image,
+                    BrandImage = merchant?.Image,
                     BrandName = merchant?.BrandName
                 };
             }
@@ -283,7 +283,7 @@ namespace ProductApi.Services
             }
         }
 
-        public async Task<List<Brand>> Brands()
+        public async Task<List<BrandDto>> Brands(int page, int size)
         {
             try
             {
@@ -322,20 +322,38 @@ namespace ProductApi.Services
                 //    ")
                 //    .ToListAsync();
 
-                var sortedBrands = await _context.merchants
-                    .FromSqlRaw(@"
-                       select *
-                        from merchants 
-                        where has_shipping = true
-                        and has_products = true
-                        order by coalesce(estimated_sales_numeric, 0) desc
-                        ;
-                    ")
+                //var sortedBrands = await _context.merchants
+                //    .FromSqlRaw(@"
+                //       select *
+                //        from merchants 
+                //        where has_shipping = true
+                //        and has_products = true
+                //        order by coalesce(estimated_sales_numeric, 0) desc
+                //        limit 20 offset 0
+                //        ;
+                //    ")
+                //    .ToListAsync();
+
+                //if (sortedBrands != null)
+                //    return sortedBrands;
+                //return  new List<Brand>();
+
+                var offset = (page - 1) * size;
+
+                var brands = await _context.merchants
+                    .Where(m => m.HasShipping == true && m.HasProducts == true)
+                    .OrderByDescending(m => m.EstimatedYearlyNumeric)
+                    .Skip(offset)
+                    .Take(size)
+                    .Select(m => new BrandDto
+                    {
+                        id = m.id,
+                        BrandName = m.BrandName,
+                        Image = m.Image
+                    })
                     .ToListAsync();
 
-                if (sortedBrands != null)
-                    return sortedBrands;
-                return  new List<Brand>();
+                return brands;
             }
             catch (Exception ex)
             {
