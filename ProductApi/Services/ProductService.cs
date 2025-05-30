@@ -152,7 +152,7 @@ namespace ProductApi.Services
             {
                 var merchant = await _context.merchants
                     .Where(m => m.id == brand_id)
-                    .Select(m => new { m.domain, m.BrandName, m.BrandUrl, m.Image })
+                    .Select(m => new { m.Domain, m.BrandName, m.BrandUrl, m.Image })
                     .FirstOrDefaultAsync();
 
                 var brandDescription = string.Empty;
@@ -166,7 +166,7 @@ namespace ProductApi.Services
 
                     brandDescription = brandDescriptionResult.FirstOrDefault();
                 }
-                if (string.IsNullOrEmpty(merchant?.domain))
+                if (string.IsNullOrEmpty(merchant?.Domain))
                     return new PaginatedProductDto();
 
                 // Build ORDER BY clause
@@ -200,7 +200,7 @@ namespace ProductApi.Services
                             LIMIT {{2}}";
 
                 var products = await _context.products
-                    .FromSqlRaw(sql, merchant?.domain, offset, pageSize)
+                    .FromSqlRaw(sql, merchant?.Domain, offset, pageSize)
                     .ToListAsync();
 
                 //var totalCount = await _context.Database
@@ -226,7 +226,7 @@ namespace ProductApi.Services
                                                   AND (product_data->>'price')::numeric > 0
                                                   AND (product_data->>'available')::boolean = true
                                                   AND is_food_or_drink = true
-                                             ", merchant?.domain).ToListAsync();
+                                             ", merchant?.Domain).ToListAsync();
                 var totalCount = countResult.FirstOrDefault();
 
                 var productDto = products.Select(p => new ProductDto()
@@ -343,8 +343,8 @@ namespace ProductApi.Services
                 var brands = await _context.merchants
                     .Where(m => m.HasShipping == true && m.HasProducts == true)
                     .OrderByDescending(m => m.EstimatedYearlyNumeric)
-                    .Skip(offset)
-                    .Take(size)
+                    //.Skip(offset)
+                    //.Take(size)
                     .Select(m => new BrandDto
                     {
                         id = m.id,

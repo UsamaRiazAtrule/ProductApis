@@ -5,7 +5,8 @@ namespace ProductApi.Models
     public class Brand
     {
         public int id { get; set; }
-        public string domain { get; set; }
+        [Column("domain")]
+        public string Domain { get; set; }
         [Column("estimated_yearly_sales")]
         public string? EstimatedYearlySales { get; set; }
         [Column("estimated_sales_numeric")]
